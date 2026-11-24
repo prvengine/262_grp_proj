@@ -1,602 +1,316 @@
 #!/usr/bin/env python3
+"""CSCI262 A3 - Email system event modeler & intrusion detection system.
+
+Usage:  python ids.py Events.txt Stats.txt Days
+
+Components (mirrors the report sections):
+  1. Initial input      -> load_events / load_stats / check_consistency
+  2. Activity engine    -> generate_logs   (writes a log file)
+  3. Analysis engine    -> analyse_log     (daily totals + mean/sd)
+  4. Alert engine       -> alert_loop      (anomaly counter vs threshold)
 """
-CSCI262 System Security – Assignment 3
-Email System Event Modeler & Intrusion Detection System
-
-Usage:
-    python IDS.py Events.txt Stats.txt Days
-
-Components:
-    1. Initial Input   – Parse Events.txt and Stats.txt; consistency checks.
-    2. Activity Engine – Generate baseline event logs over <Days> days.
-    3. Analysis Engine – Compute daily totals, mean & std dev per event.
-    4. Alert Engine    – Detect anomalies in live data vs baseline.
-"""
-
 import sys
-import os
 import math
 import random
+from dataclasses import dataclass
+from typing import Optional
 
-# ════════════════════════════════════════════════════════════════
-# Data structures
-# ════════════════════════════════════════════════════════════════
+BASELINE_LOG = "BaselineLog.txt"
+LIVE_LOG = "LiveLog.txt"
+BASELINE_TOTALS = "BaselineDailyTotals.txt"
+BASELINE_STATS = "BaselineStats.txt"
 
+
+# ---------------------------------------------------------------- 1. INPUT
+@dataclass
 class Event:
-    """Holds a single event's definition from Events.txt."""
-    def __init__(self, name: str, kind: str,
-                 minimum: float | None, maximum: float | None,
-                 weight: int):
-        self.name    = name     # e.g. "Logins"
-        self.kind    = kind     # 'C' (continuous) or 'D' (discrete)
-        self.minimum = minimum  # lower bound, or None if unspecified
-        self.maximum = maximum  # upper bound, or None if unspecified
-        self.weight  = weight   # positive integer
-
-    def __repr__(self):
-        lo = str(self.minimum) if self.minimum is not None else "—"
-        hi = str(self.maximum) if self.maximum is not None else "—"
-        return (f"Event({self.name!r}, kind={self.kind}, "
-                f"range=[{lo},{hi}], weight={self.weight})")
+    name: str
+    kind: str                      # 'C' or 'D'
+    minimum: Optional[float]       # None = no lower bound given
+    maximum: Optional[float]       # None = no upper bound given
+    weight: int
 
 
-class EventStat:
-    """Holds a single event's statistical parameters from Stats.txt."""
-    def __init__(self, name: str, mean: float, std_dev: float):
-        self.name    = name
-        self.mean    = mean
-        self.std_dev = std_dev
-
-    def __repr__(self):
-        return f"EventStat({self.name!r}, μ={self.mean}, σ={self.std_dev})"
+@dataclass
+class Stat:
+    name: str
+    mean: float
+    sd: float
 
 
-# ════════════════════════════════════════════════════════════════
-# Phase 1 – Initial Input
-# ════════════════════════════════════════════════════════════════
+def _fields(line):
+    # "Logins:D:0::2:" -> ['Logins','D','0','','2']  (trailing ':' dropped)
+    parts = line.strip().split(":")
+    if parts and parts[-1] == "":
+        parts.pop()
+    return parts
 
-def parse_events(filename: str) -> dict[str, Event]:
-    """
-    Parse Events.txt.
-    Format per line: Event name:[CD]:minimum:maximum:weight:
-    Storage: dict mapping event name → Event object.
-    """
-    events: dict[str, Event] = {}
-    with open(filename, 'r') as f:
-        lines = [l.strip() for l in f if l.strip()]
 
-    if not lines:
-        raise ValueError(f"'{filename}' is empty.")
+def _num(text):
+    return float(text) if text.strip() != "" else None
 
-    try:
-        count = int(lines[0])
-    except ValueError:
-        raise ValueError(f"First line of '{filename}' must be an integer count.")
 
-    entries = lines[1:]
-    if count != len(entries):
-        raise ValueError(
-            f"'{filename}' declares {count} events but contains {len(entries)} entries."
-        )
-
-    for line in entries:
-        parts = line.split(':')
-        if len(parts) < 5:
-            raise ValueError(f"Invalid event definition: '{line}'")
-        name    = parts[0].strip()
-        kind    = parts[1].strip()
-        minimum = float(parts[2]) if parts[2].strip() != '' else None
-        maximum = float(parts[3]) if parts[3].strip() != '' else None
-        weight  = int(parts[4])
-
-        if not name:
-            raise ValueError("Event name cannot be empty.")
-        if name in events:
-            raise ValueError(f"Duplicate event name: '{name}'.")
-        if kind not in ('C', 'D'):
-            raise ValueError(f"Invalid event type '{kind}' for '{name}'. Must be 'C' or 'D'.")
-        if minimum is not None and maximum is not None and minimum > maximum:
-            raise ValueError(f"Minimum ({minimum}) exceeds maximum ({maximum}) for '{name}'.")
-        if weight <= 0:
-            raise ValueError(f"Weight must be a positive integer for '{name}', got {weight}.")
-
-        events[name] = Event(name, kind, minimum, maximum, weight)
-
+def load_events(path):
+    """Events are kept in an ORDERED list (order = order in file) plus a dict
+    name -> Event for quick lookup."""
+    with open(path) as f:
+        lines = [l for l in f.read().splitlines() if l.strip()]
+    n = int(lines[0])
+    events = []
+    for line in lines[1:]:
+        p = _fields(line)
+        events.append(Event(p[0], p[1].upper(), _num(p[2]), _num(p[3]), int(p[4])))
+    if len(events) != n:
+        print(f"WARNING: {path} header says {n} events but {len(events)} found")
     return events
 
 
-def parse_stats(filename: str) -> dict[str, EventStat]:
-    """
-    Parse Stats.txt.
-    Format per line: Event name:mean:standard deviation:
-    Storage: dict mapping event name → EventStat object.
-    """
-    stats: dict[str, EventStat] = {}
-    with open(filename, 'r') as f:
-        lines = [l.strip() for l in f if l.strip()]
-
-    if not lines:
-        raise ValueError(f"'{filename}' is empty.")
-
-    try:
-        count = int(lines[0])
-    except ValueError:
-        raise ValueError(f"First line of '{filename}' must be an integer count.")
-
-    entries = lines[1:]
-    if count != len(entries):
-        raise ValueError(
-            f"'{filename}' declares {count} events but contains {len(entries)} entries."
-        )
-
-    for line in entries:
-        parts = line.split(':')
-        if len(parts) < 3:
-            raise ValueError(f"Invalid statistics definition: '{line}'")
-        name    = parts[0].strip()
-        try:
-            mean    = float(parts[1])
-            std_dev = float(parts[2])
-        except ValueError:
-            raise ValueError(f"Mean and standard deviation must be numbers in '{line}'.")
-
-        if not name:
-            raise ValueError("Event name in statistics file cannot be empty.")
-        if name in stats:
-            raise ValueError(f"Duplicate event name in statistics file: '{name}'.")
-        if not math.isfinite(mean) or not math.isfinite(std_dev):
-            raise ValueError(f"Mean and standard deviation must be finite numbers for '{name}'.")
-        if std_dev < 0:
-            raise ValueError(f"Standard deviation cannot be negative for '{name}'.")
-
-        stats[name] = EventStat(name, mean, std_dev)
-
+def load_stats(path):
+    with open(path) as f:
+        lines = [l for l in f.read().splitlines() if l.strip()]
+    n = int(lines[0])
+    stats = {}
+    for line in lines[1:]:
+        p = _fields(line)
+        stats[p[0]] = Stat(p[0], float(p[1]), float(p[2]))
+    if len(stats) != n:
+        print(f"WARNING: {path} header says {n} stats but {len(stats)} found")
     return stats
 
 
-def print_events(events: dict[str, Event]):
-    print(f"\n  {'Event':<20} {'Type':<12} {'Min':>6} {'Max':>8} {'Weight':>7}")
-    print(f"  {'─'*20} {'─'*12} {'─'*6} {'─'*8} {'─'*7}")
-    for e in events.values():
-        lo = f"{e.minimum}" if e.minimum is not None else "—"
-        hi = f"{e.maximum}" if e.maximum is not None else "—"
-        kind_str = "Continuous" if e.kind == 'C' else "Discrete"
-        print(f"  {e.name:<20} {kind_str:<12} {lo:>6} {hi:>8} {e.weight:>7}")
-
-
-def print_stats(stats: dict[str, EventStat]):
-    print(f"\n  {'Event':<20} {'Mean':>10} {'Std Dev':>10}")
-    print(f"  {'─'*20} {'─'*10} {'─'*10}")
-    for s in stats.values():
-        print(f"  {s.name:<20} {s.mean:>10.4f} {s.std_dev:>10.4f}")
-
-
-def check_consistency(events: dict[str, Event],
-                       stats:  dict[str, EventStat]) -> list[str]:
-    """
-    Detect inconsistencies between Events.txt and Stats.txt.
-
-    Checks performed:
-      1. Events present in one file but not the other.
-      2. Event type count mismatch.
-      3. Mean outside [minimum, maximum] range.
-      4. Negative standard deviation.
-      5. Discrete event with non-integer mean (informational).
-      6. Standard deviation of zero (informational).
-    """
-    issues: list[str] = []
-    event_names = set(events.keys())
-    stat_names  = set(stats.keys())
-
-    for name in event_names - stat_names:
-        issues.append(f"[WARNING] '{name}' defined in Events.txt but absent from Stats.txt.")
-    for name in stat_names - event_names:
-        issues.append(f"[WARNING] '{name}' defined in Stats.txt but absent from Events.txt.")
-
-    for name in event_names & stat_names:
-        e, s = events[name], stats[name]
-
-        if s.std_dev < 0:
-            issues.append(f"[ERROR]   '{name}': standard deviation ({s.std_dev}) is negative.")
-
+def check_consistency(events, stats):
+    """Return a list of problems between Events.txt and Stats.txt."""
+    problems = []
+    ev_names = [e.name for e in events]
+    for name in ev_names:
+        if name not in stats:
+            problems.append(f"'{name}' is in Events but missing from Stats")
+    for name in stats:
+        if name not in ev_names:
+            problems.append(f"'{name}' is in Stats but missing from Events")
+    if len(set(ev_names)) != len(ev_names):
+        problems.append("duplicate event names in Events")
+    for e in events:
+        if e.kind not in ("C", "D"):
+            problems.append(f"{e.name}: type must be C or D, got '{e.kind}'")
+        if e.weight <= 0:
+            problems.append(f"{e.name}: weight must be a positive integer")
+        if e.minimum is not None and e.maximum is not None and e.minimum > e.maximum:
+            problems.append(f"{e.name}: minimum > maximum")
+        if e.kind == "D":
+            for label, v in (("minimum", e.minimum), ("maximum", e.maximum)):
+                if v is not None and v != int(v):
+                    problems.append(f"{e.name}: discrete event has non-integer {label}")
+        s = stats.get(e.name)
+        if s is None:
+            continue
+        if s.sd < 0:
+            problems.append(f"{e.name}: negative standard deviation")
         if e.minimum is not None and s.mean < e.minimum:
-            issues.append(
-                f"[WARNING] '{name}': mean ({s.mean}) is below minimum ({e.minimum}).")
+            problems.append(f"{e.name}: mean {s.mean} below minimum {e.minimum}")
         if e.maximum is not None and s.mean > e.maximum:
-            issues.append(
-                f"[WARNING] '{name}': mean ({s.mean}) exceeds maximum ({e.maximum}).")
-
-        if e.kind == 'D' and s.mean != round(s.mean):
-            issues.append(
-                f"[INFO]    '{name}' is discrete but mean ({s.mean}) is not an integer.")
-
-        if s.std_dev == 0:
-            issues.append(
-                f"[INFO]    '{name}': standard deviation is 0 — values will be fixed at mean.")
-
-    if len(event_names) != len(stat_names):
-        issues.append(
-            f"[WARNING] Event count mismatch: "
-            f"Events.txt has {len(event_names)}, Stats.txt has {len(stat_names)}.")
-
-    return issues
+            problems.append(f"{e.name}: mean {s.mean} above maximum {e.maximum}")
+        # Soft check: if +/-3 sd is mostly outside the range, clamping will
+        # distort the distribution a lot.
+        if e.minimum is not None and e.maximum is not None and s.sd > 0:
+            if (e.maximum - e.minimum) < 2 * s.sd:
+                problems.append(f"{e.name}: range is narrower than 2 sd, "
+                                f"generated data cannot follow the distribution")
+    return problems
 
 
-# ════════════════════════════════════════════════════════════════
-# Phase 2 – Activity Engine
-# ════════════════════════════════════════════════════════════════
-
-LOG_FILE = "activity_log.txt"
-
-def _sample_value(event: Event, stat: EventStat) -> int | float:
-    """
-    Draw one value from a Gaussian distribution N(mean, std_dev),
-    clamped to [minimum, maximum].
-
-    - Discrete (D): rounded to nearest integer, cast to int.
-    - Continuous (C): rounded to 2 decimal places.
-    """
-    value = random.gauss(stat.mean, stat.std_dev) if stat.std_dev > 0 else stat.mean
-
-    # Clamp to allowed range
-    if event.minimum is not None:
-        value = max(event.minimum, value)
-    if event.maximum is not None:
-        value = min(event.maximum, value)
-
-    if event.kind == 'D':
-        return int(round(value))
-    else:
-        return round(value, 2)
+def report_input(events, stats):
+    print("\n=== Events read ===")
+    print(f"{'Name':<16}{'Type':<6}{'Min':<8}{'Max':<8}{'Weight'}")
+    for e in events:
+        print(f"{e.name:<16}{e.kind:<6}{str(e.minimum if e.minimum is not None else '-'):<8}"
+              f"{str(e.maximum if e.maximum is not None else '-'):<8}{e.weight}")
+    print("\n=== Statistics read ===")
+    print(f"{'Name':<16}{'Mean':<10}{'SD'}")
+    for s in stats.values():
+        print(f"{s.name:<16}{s.mean:<10}{s.sd}")
 
 
-def activity_engine(events: dict[str, Event],
-                     stats:  dict[str, EventStat],
-                     days:   int,
-                     log_file: str = LOG_FILE) -> list[dict]:
-    """
-    Generate and log events for <days> days.
+# ------------------------------------------------------- 2. ACTIVITY ENGINE
+def draw_daily_total(e, s):
+    """Draw ONE day's total for an event from Normal(mean, sd), then make it
+    legal: integer for discrete, 2 d.p. for continuous, inside [min,max].
+    We re-draw (rejection sampling) if out of range, which keeps the shape of
+    the distribution better than clamping; clamp only as a last resort."""
+    for _ in range(100):
+        x = random.gauss(s.mean, s.sd)
+        x = round(x) if e.kind == "D" else round(x, 2)
+        if (e.minimum is None or x >= e.minimum) and (e.maximum is None or x <= e.maximum):
+            return x
+    x = min(max(s.mean, e.minimum if e.minimum is not None else s.mean),
+            e.maximum if e.maximum is not None else s.mean)
+    return int(round(x)) if e.kind == "D" else round(x, 2)
 
-    Log file format (human-readable, pipe-delimited):
-        # comment lines
-        [Day N]
-        EventName | Type | Value
 
-    Returns a list of dicts: [{event_name: value, ...}, ...]  (one per day).
-    """
-    print(f"\n  Generating events for {days} day(s) → '{log_file}'")
+def split_continuous(total):
+    """Split a continuous daily total into 1-4 occurrences (e.g. sessions)
+    that sum to the total, each recorded to 2 d.p."""
+    k = random.randint(1, 4)
+    if total <= 0 or k == 1:
+        return [round(total, 2)]
+    cuts = sorted(random.uniform(0, total) for _ in range(k - 1))
+    pts = [0] + cuts + [total]
+    parts = [round(pts[i + 1] - pts[i], 2) for i in range(k)]
+    parts[-1] = round(total - sum(parts[:-1]), 2)   # fix rounding drift
+    return parts
 
-    all_days: list[dict] = []
 
-    with open(log_file, 'w') as f:
-        f.write("# Activity Log – Email IDS\n")
-        f.write("# Format: EventName | Type (C/D) | Value\n")
-        f.write(f"# Days: {days}\n")
-        f.write("#" + "─" * 50 + "\n")
+def random_time():
+    sec = random.randint(0, 86399)
+    return f"{sec // 3600:02d}:{sec % 3600 // 60:02d}:{sec % 60:02d}"
 
+
+def generate_logs(events, stats, days, path):
+    """Log format (one occurrence per line, human readable, CSV-like):
+         day,HH:MM:SS,event name,value
+       e.g.  3,14:02:55,Emails sent,1
+    Lines are sorted by time within each day."""
+    print(f"\nActivity engine: generating {days} day(s) of events -> {path}")
+    with open(path, "w") as f:
         for day in range(1, days + 1):
-            day_data: dict = {}
-            f.write(f"\n[Day {day}]\n")
+            lines = []
+            for e in events:
+                total = draw_daily_total(e, stats[e.name])
+                if e.kind == "D":
+                    values = [1] * int(total)           # one at a time
+                else:
+                    values = split_continuous(total)
+                for v in values:
+                    lines.append((random_time(), e.name, v))
+            lines.sort()
+            for t, name, v in lines:
+                f.write(f"{day},{t},{name},{v}\n")
+            if days <= 20 or day % max(1, days // 10) == 0 or day == days:
+                print(f"  day {day}/{days} done ({len(lines)} events)")
+    print("Activity engine: event generation complete.")
 
-            for name, event in events.items():
-                if name not in stats:
-                    continue
-                value = _sample_value(event, stats[name])
-                day_data[name] = value
-                f.write(f"{name} | {event.kind} | {value}\n")
 
-            all_days.append(day_data)
-            print(f"    Day {day}/{days} logged.", end='\r', flush=True)
-
-    print(f"    Done — {days} day(s) logged.                ")
-    return all_days
-
-
-def read_log(log_file: str, events: dict[str, Event]) -> list[dict]:
-    """
-    Re-read the activity log from disk.
-    Tolerates missing events (treats them as 0).
-    """
-    all_days: list[dict] = []
-    current: dict | None = None
-
-    with open(log_file, 'r') as f:
-        for raw in f:
-            line = raw.strip()
-            if not line or line.startswith('#'):
+# --------------------------------------------------------- 3. ANALYSIS ENGINE
+def analyse_log(events, log_path, days, totals_path=None, stats_path=None):
+    """Read the log, build daily totals per event (0 if nothing logged),
+    and compute mean/sd. Reads whatever is in the file, so it works even if
+    the data does not match the requested distribution."""
+    print(f"\nAnalysis engine: reading {log_path}")
+    totals = {e.name: [0.0] * days for e in events}
+    with open(log_path) as f:
+        for line in f:
+            if not line.strip():
                 continue
-            if line.startswith('[Day'):
-                if current is not None:
-                    all_days.append(current)
-                current = {}
-            elif '|' in line and current is not None:
-                parts = [p.strip() for p in line.split('|')]
-                name, kind, value_str = parts[0], parts[1], parts[2]
-                try:
-                    current[name] = int(value_str) if kind == 'D' else float(value_str)
-                except ValueError:
-                    pass   # skip malformed lines
+            day, _, name, val = line.rstrip("\n").split(",")
+            day = int(day)
+            if name in totals and 1 <= day <= days:
+                totals[name][day - 1] += float(val)
+    kind = {e.name: e.kind for e in events}
+    for name in totals:
+        totals[name] = [int(round(v)) if kind[name] == "D" else round(v, 2)
+                        for v in totals[name]]
 
-    if current is not None:
-        all_days.append(current)
+    if totals_path:
+        with open(totals_path, "w") as f:
+            f.write("Day," + ",".join(e.name for e in events) + "\n")
+            for d in range(days):
+                f.write(f"{d + 1}," + ",".join(str(totals[e.name][d]) for e in events) + "\n")
+        print(f"Analysis engine: daily totals saved to {totals_path}")
 
-    return all_days
+    derived = {}
+    for e in events:
+        v = totals[e.name]
+        mean = sum(v) / len(v)
+        sd = math.sqrt(sum((x - mean) ** 2 for x in v) / len(v))  # population sd
+        derived[e.name] = Stat(e.name, round(mean, 2), round(sd, 2))
 
-
-# ════════════════════════════════════════════════════════════════
-# Phase 3 – Analysis Engine
-# ════════════════════════════════════════════════════════════════
-
-BASELINE_FILE = "baseline_stats.txt"
-
-
-def _mean_std(values: list) -> tuple[float, float]:
-    n = len(values)
-    if n == 0:
-        return 0.0, 0.0
-    mu = sum(values) / n
-    variance = sum((v - mu) ** 2 for v in values) / n
-    return mu, math.sqrt(variance)
-
-
-def analysis_engine(source: list[dict] | str,
-                    events: dict[str, Event],
-                    data_file: str = BASELINE_FILE) -> dict:
-    """
-    Compute daily totals, mean and std dev for each event.
-    Source can be a list of daily dicts or the path to a log file.
-
-    Data file format (human-readable):
-        # comment
-        Event: <name>
-          Daily totals : [v1, v2, …]
-          Mean         : <value>
-          Std Dev      : <value>
-
-    Returns baseline dict: {event_name: {'mean': …, 'std_dev': …, 'totals': […]}}
-    """
-    if isinstance(source, str):
-        all_days = read_log(source, events)
-    else:
-        all_days = source
-
-    # Gather daily totals per event
-    totals: dict[str, list] = {name: [] for name in events}
-    for day_data in all_days:
-        for name in events:
-            totals[name].append(day_data.get(name, 0))
-
-    baseline: dict = {}
-
-    with open(data_file, 'w') as f:
-        f.write("# Baseline Statistics – Email IDS\n")
-        f.write("# Format: Event | Mean | Std Dev | Daily Totals\n")
-        f.write("#" + "─" * 60 + "\n\n")
-
-        print(f"\n  {'Event':<22} {'Mean':>10} {'Std Dev':>10}  Daily totals")
-        print(f"  {'─'*22} {'─'*10} {'─'*10}  {'─'*30}")
-
-        for name, values in totals.items():
-            mu, sigma = _mean_std(values)
-            baseline[name] = {'mean': mu, 'std_dev': sigma, 'totals': values}
-
-            f.write(f"Event: {name}\n")
-            f.write(f"  Daily totals : {values}\n")
-            f.write(f"  Mean         : {mu:.4f}\n")
-            f.write(f"  Std Dev      : {sigma:.4f}\n\n")
-
-            totals_preview = str(values[:5]) + ("…" if len(values) > 5 else "")
-            print(f"  {name:<22} {mu:>10.4f} {sigma:>10.4f}  {totals_preview}")
-
-    print(f"\n  Baseline saved to '{data_file}'.")
-    return baseline
+    if stats_path:
+        with open(stats_path, "w") as f:
+            f.write(f"{len(events)}\n")
+            for e in events:
+                s = derived[e.name]
+                f.write(f"{s.name}:{s.mean}:{s.sd}:\n")
+        print(f"Analysis engine: baseline statistics saved to {stats_path}")
+        print(f"{'Event':<16}{'Mean':<10}{'SD'}")
+        for s in derived.values():
+            print(f"{s.name:<16}{s.mean:<10}{s.sd}")
+    return totals, derived
 
 
-# ════════════════════════════════════════════════════════════════
-# Phase 4 – Alert Engine
-# ════════════════════════════════════════════════════════════════
-
-ALERT_LOG      = "alert_activity_log.txt"
-ALERT_BASELINE = "alert_daily_totals.txt"
+# ------------------------------------------------------------- 4. ALERT ENGINE
+SD_FLOOR = 0.01   # avoid divide-by-zero if a baseline sd is 0
 
 
-def alert_engine(events: dict[str, Event], baseline: dict):
-    """
-    Interactively monitor live-generated data against the baseline.
-
-    Anomaly counter per day:
-        Σ  |daily_value − baseline_mean| / baseline_std  × weight
-           for each event
-
-    Threshold = 2 × (sum of all weights)
-
-    If anomaly_counter >= threshold → day is FLAGGED, else OK.
-    """
-    total_weight = sum(e.weight for e in events.values())
-    threshold    = 2 * total_weight
-
-    print(f"\n{'═'*60}")
-    print(" ALERT ENGINE – Intrusion Detection")
-    print(f"{'═'*60}")
-    print(f"  Sum of weights : {total_weight}")
-    print(f"  Threshold (2×) : {threshold}")
-
+def alert_loop(events, baseline):
+    threshold = 2 * sum(e.weight for e in events)
     while True:
-        print(f"\n{'─'*60}")
-        print("  [1] Load a new statistics file and run alert detection")
-        print("  [2] Quit")
-        choice = input("  Choice: ").strip()
-
-        if choice == '2':
-            print("\n  [Alert Engine] Exiting. Goodbye!")
-            break
-
-        if choice != '1':
-            print("  Invalid choice. Enter 1 or 2.")
-            continue
-
-        # ── Collect inputs ───────────────────────────────────────
-        stats_file = input("  Path to new statistics file: ").strip()
-        if not os.path.isfile(stats_file):
-            print(f"  File '{stats_file}' not found. Try again.")
-            continue
-
+        print("\n--- Alert engine ---")
+        path = input("New statistics file (or 'q' to quit): ").strip()
+        if path.lower() in ("q", "quit"):
+            print("Goodbye.")
+            return
         try:
-            new_stats = parse_stats(stats_file)
-        except Exception as exc:
-            print(f"  Could not parse file: {exc}")
+            new_stats = load_stats(path)
+        except (OSError, ValueError, IndexError) as err:
+            print(f"Could not read '{path}': {err}")
             continue
-
-        print("\n  Checking live statistics consistency…")
-        live_issues = check_consistency(events, new_stats)
-        if live_issues:
-            for issue in live_issues:
-                print(f"  {issue}")
-
-            has_errors = any(
-                issue.startswith("[ERROR]")
-                or ("defined in Events.txt but absent from Stats.txt" in issue)
-                for issue in live_issues
-            )
-            if has_errors:
-                print("  Live statistics cannot be used because required events are missing or invalid.")
-                continue
-        else:
-            print("  No inconsistencies detected. ✓")
-
+        problems = check_consistency(events, new_stats)
+        if problems:
+            print("Problems with that file:")
+            for p in problems:
+                print("  -", p)
+            continue
         try:
-            new_days = int(input("\n  Number of days to simulate: ").strip())
-            if new_days <= 0:
+            days = int(input("Number of days to simulate: "))
+            if days < 1:
                 raise ValueError
         except ValueError:
-            print("  Please enter a positive integer for days.")
+            print("Please enter a positive whole number.")
             continue
 
-        # ── Generate & analyse live data ─────────────────────────
-        print(f"\n[Activity Engine] Running for {new_days} day(s)…")
-        live_data = activity_engine(events, new_stats, new_days, log_file=ALERT_LOG)
+        generate_logs(events, new_stats, days, LIVE_LOG)
+        totals, _ = analyse_log(events, LIVE_LOG, days)
 
-        print("\n[Analysis Engine] Analysing live data…")
-        live_analysis = analysis_engine(ALERT_LOG, events, data_file=ALERT_BASELINE)
-
-        # ── Anomaly detection ────────────────────────────────────
-        print(f"\n{'─'*65}")
-        print(f"  {'Day':<6} {'Anomaly Counter':>18} {'Threshold':>12}  Status")
-        print(f"  {'─'*6} {'─'*18} {'─'*12}  {'─'*20}")
-
-        for day_idx, day_data in enumerate(live_data, start=1):
-            anomaly_counter = 0.0
-
-            for name, event in events.items():
-                if name not in baseline or name not in day_data:
-                    continue
-
-                base_mean = baseline[name]['mean']
-                base_std  = baseline[name]['std_dev']
-
-                if base_std == 0:
-                    # Can't normalise; skip (or treat as 0 deviation)
-                    continue
-
-                deviations       = abs(day_data[name] - base_mean) / base_std
-                anomaly_counter += deviations * event.weight
-
-            if anomaly_counter >= threshold:
-                status = "FLAGGED (alert) ⚠"
-            else:
-                status = "okay            ✓"
-
-            print(f"  {day_idx:<6} {anomaly_counter:>18.4f} {threshold:>12.2f}  {status}")
-
-        print(f"{'─'*65}")
+        print(f"\nThreshold = 2 x sum(weights) = {threshold}")
+        for d in range(days):
+            counter = 0.0
+            for e in events:
+                b = baseline[e.name]
+                dev = abs(totals[e.name][d] - b.mean) / max(b.sd, SD_FLOOR)
+                counter += dev * e.weight
+            status = "FLAGGED" if counter >= threshold else "okay"
+            print(f"Day {d + 1:>3}: threshold={threshold}  anomaly counter={counter:7.2f}  -> {status}")
 
 
-# ════════════════════════════════════════════════════════════════
-# Entry point
-# ════════════════════════════════════════════════════════════════
-
+# ------------------------------------------------------------------------ main
 def main():
-    # ── Argument validation ──────────────────────────────────────
     if len(sys.argv) != 4:
-        print("Usage: python IDS.py Events.txt Stats.txt Days")
+        print("Usage: python ids.py Events.txt Stats.txt Days")
         sys.exit(1)
-
-    events_file = sys.argv[1]
-    stats_file  = sys.argv[2]
-
     try:
         days = int(sys.argv[3])
-        if days <= 0:
+        if days < 1:
             raise ValueError
-    except ValueError:
-        print("Error: Days must be a positive integer.")
+        events = load_events(sys.argv[1])
+        stats = load_stats(sys.argv[2])
+    except (OSError, ValueError, IndexError) as err:
+        print(f"Input error: {err}")
         sys.exit(1)
 
-    # ════════════════════════════════════════════════════════════
-    # Phase 1 – Initial Input
-    # ════════════════════════════════════════════════════════════
-    print("=" * 60)
-    print("  CSCI262 System Security – Email IDS")
-    print("=" * 60)
-
-    # Load Events.txt
-    print(f"\n[Phase 1] Loading '{events_file}'…")
-    try:
-        events = parse_events(events_file)
-    except FileNotFoundError:
-        print(f"  Error: '{events_file}' not found.")
+    report_input(events, stats)
+    problems = check_consistency(events, stats)
+    if problems:
+        print("\nInconsistencies found:")
+        for p in problems:
+            print("  -", p)
         sys.exit(1)
-    except Exception as exc:
-        print(f"  Error parsing events file: {exc}")
-        sys.exit(1)
+    print("\nEvents.txt and Stats.txt are consistent.")
 
-    print(f"  {len(events)} event(s) loaded:")
-    print_events(events)
-
-    # Load Stats.txt
-    print(f"\n[Phase 1] Loading '{stats_file}'…")
-    try:
-        stats = parse_stats(stats_file)
-    except FileNotFoundError:
-        print(f"  Error: '{stats_file}' not found.")
-        sys.exit(1)
-    except Exception as exc:
-        print(f"  Error parsing stats file: {exc}")
-        sys.exit(1)
-
-    print(f"  {len(stats)} event stat(s) loaded:")
-    print_stats(stats)
-
-    # Consistency check
-    print(f"\n[Phase 1] Consistency check…")
-    issues = check_consistency(events, stats)
-    if issues:
-        for issue in issues:
-            print(f"  {issue}")
-    else:
-        print("  No inconsistencies detected. ✓")
-
-    # ════════════════════════════════════════════════════════════
-    # Phase 2 – Activity Engine (baseline logging)
-    # ════════════════════════════════════════════════════════════
-    print(f"\n{'─'*60}")
-    print("[Phase 2] Activity Engine – generating baseline events…")
-    activity_engine(events, stats, days, log_file=LOG_FILE)
-
-    # ════════════════════════════════════════════════════════════
-    # Phase 3 – Analysis Engine
-    # ════════════════════════════════════════════════════════════
-    print(f"\n{'─'*60}")
-    print("[Phase 3] Analysis Engine – computing baseline statistics…")
-    baseline = analysis_engine(LOG_FILE, events, data_file=BASELINE_FILE)
-
-    # ════════════════════════════════════════════════════════════
-    # Phase 4 – Alert Engine
-    # ════════════════════════════════════════════════════════════
-    print(f"\n{'─'*60}")
-    print("[Phase 4] Event generation complete. Starting alert phase…")
-    alert_engine(events, baseline)
+    generate_logs(events, stats, days, BASELINE_LOG)
+    print("\nStarting analysis phase...")
+    _, baseline = analyse_log(events, BASELINE_LOG, days, BASELINE_TOTALS, BASELINE_STATS)
+    alert_loop(events, baseline)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
