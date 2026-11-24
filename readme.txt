@@ -2,7 +2,7 @@ CSCI262 System Security – Assignment 3
 Email System Event Modeler & Intrusion Detection System
 =======================================================
 
-Group Members & Student IDs : devanandi praveen 8575800, 
+Group Members & Student IDs : Devanandi Praveen (8575800)
 Language      : Python 3.12.4
 
 No third-party libraries are required. Only Python standard-library modules
@@ -12,6 +12,7 @@ are used: sys, os, math, random.
 COMPILATION / INSTALLATION
 ─────────────────────────────────────────────────────
 
+Python does not require compilation.
 
 1. Ensure Python 3.11 or later is installed:
      python3 --version
@@ -27,6 +28,10 @@ HOW TO RUN
 Command syntax:
   python3 IDS.py <Events.txt> <Stats.txt> <Days>
 
+Or via the included executable wrapper script:
+  chmod +x IDS
+  ./IDS <Events.txt> <Stats.txt> <Days>
+
 Arguments:
   Events.txt  – path to the events definition file
   Stats.txt   – path to the statistics/distribution file
@@ -34,6 +39,7 @@ Arguments:
 
 Example:
   python3 IDS.py Events.txt Stats.txt 30
+  (or: ./IDS Events.txt Stats.txt 30)
 
 Note: On some systems the command may be "python" instead of "python3".
       Use whichever resolves to Python 3.11+ on your machine.
@@ -74,6 +80,7 @@ SUBMISSION FILES
 ─────────────────────────────────────────────────────
 
   IDS.py       – main program (all four phases)
+  IDS          – executable bash wrapper script (optional convenience)
   Events.txt   – sample events definition file
   Stats.txt    – sample statistics file
   readme.txt   – this file

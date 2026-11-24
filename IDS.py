@@ -65,14 +65,41 @@ def parse_events(filename: str) -> dict[str, Event]:
     with open(filename, 'r') as f:
         lines = [l.strip() for l in f if l.strip()]
 
-    count = int(lines[0])
-    for line in lines[1 : count + 1]:
+    if not lines:
+        raise ValueError(f"'{filename}' is empty.")
+
+    try:
+        count = int(lines[0])
+    except ValueError:
+        raise ValueError(f"First line of '{filename}' must be an integer count.")
+
+    entries = lines[1:]
+    if count != len(entries):
+        raise ValueError(
+            f"'{filename}' declares {count} events but contains {len(entries)} entries."
+        )
+
+    for line in entries:
         parts = line.split(':')
+        if len(parts) < 5:
+            raise ValueError(f"Invalid event definition: '{line}'")
         name    = parts[0].strip()
         kind    = parts[1].strip()
         minimum = float(parts[2]) if parts[2].strip() != '' else None
         maximum = float(parts[3]) if parts[3].strip() != '' else None
         weight  = int(parts[4])
+
+        if not name:
+            raise ValueError("Event name cannot be empty.")
+        if name in events:
+            raise ValueError(f"Duplicate event name: '{name}'.")
+        if kind not in ('C', 'D'):
+            raise ValueError(f"Invalid event type '{kind}' for '{name}'. Must be 'C' or 'D'.")
+        if minimum is not None and maximum is not None and minimum > maximum:
+            raise ValueError(f"Minimum ({minimum}) exceeds maximum ({maximum}) for '{name}'.")
+        if weight <= 0:
+            raise ValueError(f"Weight must be a positive integer for '{name}', got {weight}.")
+
         events[name] = Event(name, kind, minimum, maximum, weight)
 
     return events
@@ -88,12 +115,40 @@ def parse_stats(filename: str) -> dict[str, EventStat]:
     with open(filename, 'r') as f:
         lines = [l.strip() for l in f if l.strip()]
 
-    count = int(lines[0])
-    for line in lines[1 : count + 1]:
-        parts   = line.split(':')
+    if not lines:
+        raise ValueError(f"'{filename}' is empty.")
+
+    try:
+        count = int(lines[0])
+    except ValueError:
+        raise ValueError(f"First line of '{filename}' must be an integer count.")
+
+    entries = lines[1:]
+    if count != len(entries):
+        raise ValueError(
+            f"'{filename}' declares {count} events but contains {len(entries)} entries."
+        )
+
+    for line in entries:
+        parts = line.split(':')
+        if len(parts) < 3:
+            raise ValueError(f"Invalid statistics definition: '{line}'")
         name    = parts[0].strip()
-        mean    = float(parts[1])
-        std_dev = float(parts[2])
+        try:
+            mean    = float(parts[1])
+            std_dev = float(parts[2])
+        except ValueError:
+            raise ValueError(f"Mean and standard deviation must be numbers in '{line}'.")
+
+        if not name:
+            raise ValueError("Event name in statistics file cannot be empty.")
+        if name in stats:
+            raise ValueError(f"Duplicate event name in statistics file: '{name}'.")
+        if not math.isfinite(mean) or not math.isfinite(std_dev):
+            raise ValueError(f"Mean and standard deviation must be finite numbers for '{name}'.")
+        if std_dev < 0:
+            raise ValueError(f"Standard deviation cannot be negative for '{name}'.")
+
         stats[name] = EventStat(name, mean, std_dev)
 
     return stats
@@ -231,7 +286,7 @@ def activity_engine(events: dict[str, Event],
                 f.write(f"{name} | {event.kind} | {value}\n")
 
             all_days.append(day_data)
-            print(f"    Day {day}/{days} logged.", end='\r')
+            print(f"    Day {day}/{days} logged.", end='\r', flush=True)
 
     print(f"    Done — {days} day(s) logged.                ")
     return all_days
@@ -284,11 +339,12 @@ def _mean_std(values: list) -> tuple[float, float]:
     return mu, math.sqrt(variance)
 
 
-def analysis_engine(all_days:  list[dict],
-                     events:    dict[str, Event],
-                     data_file: str = BASELINE_FILE) -> dict:
+def analysis_engine(source: list[dict] | str,
+                    events: dict[str, Event],
+                    data_file: str = BASELINE_FILE) -> dict:
     """
     Compute daily totals, mean and std dev for each event.
+    Source can be a list of daily dicts or the path to a log file.
 
     Data file format (human-readable):
         # comment
@@ -299,6 +355,11 @@ def analysis_engine(all_days:  list[dict],
 
     Returns baseline dict: {event_name: {'mean': …, 'std_dev': …, 'totals': […]}}
     """
+    if isinstance(source, str):
+        all_days = read_log(source, events)
+    else:
+        all_days = source
+
     # Gather daily totals per event
     totals: dict[str, list] = {name: [] for name in events}
     for day_data in all_days:
@@ -386,8 +447,25 @@ def alert_engine(events: dict[str, Event], baseline: dict):
             print(f"  Could not parse file: {exc}")
             continue
 
+        print("\n  Checking live statistics consistency…")
+        live_issues = check_consistency(events, new_stats)
+        if live_issues:
+            for issue in live_issues:
+                print(f"  {issue}")
+
+            has_errors = any(
+                issue.startswith("[ERROR]")
+                or ("defined in Events.txt but absent from Stats.txt" in issue)
+                for issue in live_issues
+            )
+            if has_errors:
+                print("  Live statistics cannot be used because required events are missing or invalid.")
+                continue
+        else:
+            print("  No inconsistencies detected. ✓")
+
         try:
-            new_days = int(input("  Number of days to simulate: ").strip())
+            new_days = int(input("\n  Number of days to simulate: ").strip())
             if new_days <= 0:
                 raise ValueError
         except ValueError:
@@ -399,12 +477,12 @@ def alert_engine(events: dict[str, Event], baseline: dict):
         live_data = activity_engine(events, new_stats, new_days, log_file=ALERT_LOG)
 
         print("\n[Analysis Engine] Analysing live data…")
-        live_analysis = analysis_engine(live_data, events, data_file=ALERT_BASELINE)
+        live_analysis = analysis_engine(ALERT_LOG, events, data_file=ALERT_BASELINE)
 
         # ── Anomaly detection ────────────────────────────────────
-        print(f"\n{'─'*60}")
+        print(f"\n{'─'*65}")
         print(f"  {'Day':<6} {'Anomaly Counter':>18} {'Threshold':>12}  Status")
-        print(f"  {'─'*6} {'─'*18} {'─'*12}  {'─'*10}")
+        print(f"  {'─'*6} {'─'*18} {'─'*12}  {'─'*20}")
 
         for day_idx, day_data in enumerate(live_data, start=1):
             anomaly_counter = 0.0
@@ -424,13 +502,13 @@ def alert_engine(events: dict[str, Event], baseline: dict):
                 anomaly_counter += deviations * event.weight
 
             if anomaly_counter >= threshold:
-                status = "FLAGGED ⚠"
+                status = "FLAGGED (alert) ⚠"
             else:
-                status = "okay   ✓"
+                status = "okay            ✓"
 
-            print(f"  {day_idx:<6} {anomaly_counter:>18.4f} {threshold:>12}  {status}")
+            print(f"  {day_idx:<6} {anomaly_counter:>18.4f} {threshold:>12.2f}  {status}")
 
-        print(f"{'─'*60}")
+        print(f"{'─'*65}")
 
 
 # ════════════════════════════════════════════════════════════════
@@ -503,14 +581,14 @@ def main():
     # ════════════════════════════════════════════════════════════
     print(f"\n{'─'*60}")
     print("[Phase 2] Activity Engine – generating baseline events…")
-    all_days = activity_engine(events, stats, days)
+    activity_engine(events, stats, days, log_file=LOG_FILE)
 
     # ════════════════════════════════════════════════════════════
     # Phase 3 – Analysis Engine
     # ════════════════════════════════════════════════════════════
     print(f"\n{'─'*60}")
     print("[Phase 3] Analysis Engine – computing baseline statistics…")
-    baseline = analysis_engine(all_days, events)
+    baseline = analysis_engine(LOG_FILE, events, data_file=BASELINE_FILE)
 
     # ════════════════════════════════════════════════════════════
     # Phase 4 – Alert Engine
