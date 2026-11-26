@@ -181,10 +181,14 @@ def generate_logs(events, stats, days, path):
                 else:
                     values = split_continuous(total)
                 for v in values:
-                    lines.append((random_time(), e.name, v))
+                    lines.append((random_time(), e.name, e.kind, v))
             lines.sort()
-            for t, name, v in lines:
-                f.write(f"{day},{t},{name},{v}\n")
+            for t, name, kind, v in lines:
+                if kind == "C":
+                    value_text = f"{v:.2f}"
+                else:
+                    value_text = str(int(v))
+                f.write(f"{day},{t},{name},{value_text}\n")
             if days <= 20 or day % max(1, days // 10) == 0 or day == days:
                 print(f"  day {day}/{days} done ({len(lines)} events)")
     print("Activity engine: event generation complete.")

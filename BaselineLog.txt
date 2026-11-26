@@ -1,330 +1,151 @@
-1,00:29:53,Emails sent,1
-1,00:45:05,Emails sent,1
-1,02:22:25,Emails deleted,1
-1,02:49:59,Emails opened,1
-1,03:58:01,Emails deleted,1
-1,04:29:16,Emails deleted,1
-1,04:49:29,Emails sent,1
-1,05:27:14,Emails deleted,1
-1,05:28:25,Logins,1
-1,05:53:25,Emails sent,1
-1,06:02:20,Emails sent,1
-1,07:14:33,Logins,1
-1,08:48:25,Emails sent,1
-1,11:06:45,Emails sent,1
-1,11:41:43,Emails sent,1
-1,13:02:37,Logins,1
-1,13:05:30,Time online,149.99
-1,15:13:21,Emails sent,1
-1,17:32:40,Emails opened,1
-1,19:34:52,Emails sent,1
-1,20:10:02,Emails opened,1
-1,22:03:56,Emails deleted,1
-1,22:19:48,Logins,1
-1,23:03:13,Emails sent,1
-2,00:21:55,Emails opened,1
-2,01:02:53,Emails deleted,1
-2,01:14:29,Logins,1
-2,01:19:14,Emails deleted,1
-2,02:36:46,Emails deleted,1
-2,03:17:18,Emails opened,1
-2,03:19:28,Emails opened,1
-2,03:47:36,Emails sent,1
-2,03:57:41,Emails deleted,1
-2,06:11:23,Emails sent,1
-2,07:03:44,Time online,43.48
-2,08:32:15,Emails deleted,1
-2,09:17:49,Emails deleted,1
-2,11:00:09,Emails sent,1
-2,12:03:49,Emails sent,1
-2,12:17:30,Emails deleted,1
-2,12:23:28,Time online,37.98
-2,12:23:50,Emails opened,1
-2,13:08:30,Emails sent,1
-2,14:27:51,Emails sent,1
-2,15:29:32,Emails opened,1
-2,15:36:33,Logins,1
-2,16:48:48,Emails opened,1
-2,16:52:12,Emails sent,1
-2,18:20:20,Emails opened,1
-2,18:32:39,Emails sent,1
-2,18:44:51,Emails opened,1
-2,19:03:54,Emails opened,1
-2,19:30:23,Time online,4.15
-2,19:35:37,Emails sent,1
-2,19:40:42,Time online,14.12
-2,19:47:10,Emails deleted,1
-2,20:04:32,Emails sent,1
-2,20:45:12,Emails deleted,1
-2,20:58:59,Emails opened,1
-2,22:12:17,Emails opened,1
-2,23:00:45,Emails deleted,1
-2,23:03:14,Emails opened,1
-2,23:09:04,Emails sent,1
-2,23:23:36,Emails deleted,1
-2,23:27:24,Emails deleted,1
-3,00:20:16,Logins,1
-3,00:22:04,Emails sent,1
-3,00:22:17,Emails sent,1
-3,00:47:10,Emails sent,1
-3,00:47:28,Emails deleted,1
-3,01:08:31,Emails deleted,1
-3,02:16:35,Emails sent,1
-3,03:05:06,Emails sent,1
-3,04:52:49,Logins,1
-3,05:14:49,Emails sent,1
-3,06:28:30,Emails opened,1
-3,08:07:24,Emails deleted,1
-3,08:31:40,Emails opened,1
-3,09:03:31,Emails deleted,1
-3,09:46:55,Time online,133.49
-3,10:26:16,Emails deleted,1
-3,11:00:42,Emails sent,1
-3,12:56:12,Emails sent,1
-3,13:15:46,Emails sent,1
-3,14:03:08,Emails sent,1
-3,15:07:52,Emails opened,1
-3,15:42:55,Emails sent,1
-3,16:30:58,Emails deleted,1
-3,16:37:06,Emails deleted,1
-3,16:37:53,Emails sent,1
-3,18:17:24,Time online,24.45
-3,18:42:20,Logins,1
-3,20:48:20,Logins,1
-3,22:47:46,Emails sent,1
-3,22:51:49,Emails opened,1
-3,23:47:06,Emails deleted,1
-3,23:57:36,Emails deleted,1
-4,00:05:01,Emails sent,1
-4,00:36:24,Time online,9.35
-4,00:58:56,Emails opened,1
-4,01:05:25,Emails opened,1
-4,01:43:13,Emails sent,1
-4,01:44:34,Logins,1
-4,03:13:42,Logins,1
-4,04:26:23,Logins,1
-4,05:35:22,Emails sent,1
-4,05:38:01,Emails sent,1
-4,10:52:22,Emails deleted,1
-4,11:11:47,Emails opened,1
-4,11:22:02,Logins,1
-4,13:18:33,Emails opened,1
-4,13:23:35,Time online,116.03
-4,14:09:29,Logins,1
-4,15:46:55,Emails deleted,1
-4,15:48:49,Emails sent,1
-4,16:24:57,Emails opened,1
-4,16:44:13,Logins,1
-4,17:39:59,Emails sent,1
-4,18:14:18,Emails sent,1
-4,20:10:27,Logins,1
-4,20:31:20,Emails opened,1
-4,21:19:56,Emails sent,1
-4,21:48:05,Emails sent,1
-4,22:53:31,Emails opened,1
-4,23:18:05,Emails sent,1
-4,23:51:45,Emails opened,1
-5,00:27:54,Emails opened,1
-5,01:34:53,Emails sent,1
-5,01:40:46,Emails opened,1
-5,02:12:06,Emails sent,1
-5,02:23:12,Emails opened,1
-5,02:29:02,Emails sent,1
-5,02:47:00,Emails opened,1
-5,06:42:32,Emails opened,1
-5,07:05:58,Emails opened,1
-5,07:07:06,Emails sent,1
-5,07:46:43,Emails sent,1
-5,08:47:58,Emails opened,1
-5,09:35:39,Emails sent,1
-5,12:16:10,Emails opened,1
-5,12:32:58,Emails opened,1
-5,12:39:36,Emails deleted,1
-5,12:48:56,Time online,140.94
-5,13:49:51,Emails deleted,1
-5,13:54:10,Emails opened,1
-5,16:26:32,Emails sent,1
-5,18:13:51,Logins,1
-5,18:25:57,Emails deleted,1
-5,18:50:25,Logins,1
-5,19:37:30,Emails sent,1
-5,19:40:26,Emails deleted,1
-5,20:58:18,Emails sent,1
-5,20:58:46,Logins,1
-5,21:33:59,Emails opened,1
-5,22:38:54,Emails sent,1
-6,02:41:22,Emails sent,1
-6,03:05:10,Emails sent,1
-6,03:15:12,Emails opened,1
-6,03:43:32,Emails opened,1
-6,05:21:06,Emails sent,1
-6,05:31:55,Emails deleted,1
-6,06:41:57,Emails sent,1
-6,06:55:08,Emails deleted,1
-6,06:59:27,Emails opened,1
-6,07:19:00,Emails deleted,1
-6,07:44:08,Time online,67.68
-6,09:52:56,Emails opened,1
-6,11:23:06,Emails deleted,1
-6,11:41:23,Emails opened,1
-6,11:42:45,Emails sent,1
-6,12:35:18,Emails sent,1
-6,12:38:51,Emails sent,1
-6,13:00:19,Emails sent,1
-6,13:29:09,Emails sent,1
-6,13:30:51,Emails opened,1
-6,13:48:26,Emails sent,1
-6,14:32:14,Emails opened,1
-6,15:07:12,Emails opened,1
-6,15:25:23,Emails opened,1
-6,16:30:34,Emails opened,1
-6,17:05:49,Emails sent,1
-6,17:42:38,Time online,57.82
-6,19:59:45,Emails opened,1
-6,20:12:44,Logins,1
-6,21:38:04,Time online,27.39
-6,22:34:28,Logins,1
-7,01:42:46,Time online,8.17
-7,02:49:24,Emails sent,1
-7,03:15:44,Time online,7.67
-7,04:06:01,Emails sent,1
-7,04:20:27,Emails opened,1
-7,04:34:11,Emails sent,1
-7,04:54:14,Logins,1
-7,05:37:25,Emails opened,1
-7,06:28:15,Emails deleted,1
-7,07:17:36,Emails opened,1
-7,08:25:28,Emails sent,1
-7,08:33:11,Emails deleted,1
-7,09:41:57,Emails sent,1
-7,10:13:22,Emails opened,1
-7,10:57:23,Logins,1
-7,11:25:36,Emails sent,1
-7,12:04:32,Emails opened,1
-7,12:59:59,Emails sent,1
-7,13:25:16,Logins,1
-7,14:31:06,Time online,124.12
-7,14:55:39,Emails deleted,1
-7,16:51:41,Emails sent,1
-7,18:12:01,Emails sent,1
-7,18:37:30,Emails sent,1
-7,19:46:04,Emails opened,1
-7,21:34:56,Logins,1
-7,21:48:00,Emails opened,1
-7,22:00:04,Time online,21.91
-7,23:03:20,Emails opened,1
-8,00:19:38,Emails sent,1
-8,00:22:29,Emails sent,1
-8,01:03:29,Emails opened,1
-8,01:39:02,Emails deleted,1
-8,02:46:05,Emails opened,1
-8,02:53:56,Time online,13.39
-8,04:58:11,Emails opened,1
-8,04:58:41,Emails deleted,1
-8,05:06:24,Emails opened,1
-8,05:20:04,Emails sent,1
-8,06:11:12,Logins,1
-8,06:26:30,Emails opened,1
-8,07:51:12,Emails deleted,1
-8,08:13:33,Emails deleted,1
-8,08:13:42,Emails sent,1
-8,08:25:43,Time online,29.78
-8,08:57:08,Emails opened,1
-8,09:26:17,Emails sent,1
-8,10:10:31,Emails opened,1
-8,10:17:43,Time online,100.92
-8,10:20:36,Emails opened,1
-8,10:43:33,Emails opened,1
-8,10:49:50,Emails sent,1
-8,11:04:47,Emails opened,1
-8,11:31:14,Emails deleted,1
-8,11:41:33,Emails opened,1
-8,13:09:26,Emails deleted,1
-8,14:08:06,Emails sent,1
-8,16:10:43,Emails opened,1
-8,16:17:26,Logins,1
-8,16:35:44,Emails deleted,1
-8,16:36:11,Emails sent,1
-8,16:45:57,Emails opened,1
-8,18:40:11,Emails deleted,1
-8,19:18:59,Emails opened,1
-8,19:33:14,Emails opened,1
-8,19:58:35,Emails sent,1
-8,21:05:23,Emails sent,1
-8,21:13:50,Emails opened,1
-8,21:15:24,Emails sent,1
-8,21:36:31,Emails opened,1
-8,22:04:56,Emails deleted,1
-8,22:11:24,Emails opened,1
-9,01:20:35,Emails opened,1
-9,02:22:02,Emails sent,1
-9,03:38:10,Emails sent,1
-9,04:05:58,Emails sent,1
-9,04:23:47,Emails opened,1
-9,05:05:47,Emails deleted,1
-9,05:09:57,Time online,124.3
-9,05:10:50,Emails deleted,1
-9,05:58:17,Emails opened,1
-9,05:58:56,Emails opened,1
-9,06:07:45,Emails opened,1
-9,06:32:46,Emails deleted,1
-9,06:45:55,Emails opened,1
-9,06:56:38,Emails opened,1
-9,08:26:47,Emails deleted,1
-9,08:47:55,Emails opened,1
-9,09:17:49,Emails sent,1
-9,12:13:58,Emails sent,1
-9,12:59:26,Logins,1
-9,13:04:30,Emails opened,1
-9,14:27:28,Emails deleted,1
-9,14:33:10,Emails opened,1
-9,14:54:44,Time online,31.77
-9,15:04:53,Emails sent,1
-9,15:30:44,Emails sent,1
-9,16:03:44,Emails sent,1
-9,16:46:03,Logins,1
-9,17:52:35,Emails opened,1
-9,18:08:54,Emails sent,1
-9,18:22:13,Emails deleted,1
-9,19:26:15,Emails opened,1
-9,19:27:48,Emails opened,1
-9,21:55:15,Emails opened,1
-9,22:48:27,Emails deleted,1
-10,00:00:45,Emails deleted,1
-10,00:19:34,Emails sent,1
-10,01:29:27,Emails opened,1
-10,02:03:00,Emails sent,1
-10,02:53:08,Emails opened,1
-10,03:12:41,Emails sent,1
-10,04:16:13,Emails sent,1
-10,04:25:43,Logins,1
-10,04:45:12,Emails deleted,1
-10,04:56:46,Emails deleted,1
-10,05:26:30,Emails opened,1
-10,07:04:28,Emails opened,1
-10,08:08:35,Emails sent,1
-10,09:34:35,Emails deleted,1
-10,10:55:04,Emails sent,1
-10,11:30:34,Emails sent,1
-10,12:13:18,Emails opened,1
-10,12:15:08,Emails opened,1
-10,13:13:05,Emails sent,1
-10,13:14:31,Time online,17.42
-10,14:28:13,Emails opened,1
-10,14:30:21,Time online,50.14
-10,15:52:06,Emails sent,1
-10,16:01:37,Emails opened,1
-10,16:53:45,Emails deleted,1
-10,17:25:58,Logins,1
-10,17:37:27,Emails sent,1
-10,18:23:24,Emails opened,1
-10,19:23:03,Logins,1
-10,19:31:19,Emails deleted,1
-10,20:01:44,Logins,1
-10,21:14:43,Logins,1
-10,22:23:58,Emails deleted,1
-10,22:29:47,Emails sent,1
-10,23:02:07,Emails deleted,1
-10,23:18:33,Time online,78.04
-10,23:27:32,Emails deleted,1
-10,23:30:58,Emails deleted,1
+1,00:21:25,Emails sent,1
+1,01:08:53,Emails opened,1
+1,01:25:29,Emails sent,1
+1,01:26:13,Emails opened,1
+1,02:05:44,Logins,1
+1,02:11:45,Emails sent,1
+1,02:20:07,Emails deleted,1
+1,02:59:14,Emails opened,1
+1,04:12:58,Emails sent,1
+1,04:37:41,Emails sent,1
+1,05:56:28,Emails opened,1
+1,06:27:58,Emails deleted,1
+1,07:25:09,Emails sent,1
+1,07:45:51,Logins,1
+1,08:48:14,Emails opened,1
+1,08:57:24,Time online,80.03
+1,09:34:42,Logins,1
+1,10:57:28,Emails sent,1
+1,11:56:48,Logins,1
+1,12:28:26,Logins,1
+1,12:36:51,Time online,43.16
+1,13:41:58,Emails deleted,1
+1,15:31:22,Emails opened,1
+1,16:35:00,Emails sent,1
+1,19:08:13,Emails opened,1
+1,19:56:11,Emails deleted,1
+1,20:35:47,Emails opened,1
+1,21:09:00,Emails sent,1
+1,21:58:13,Emails opened,1
+1,22:29:04,Time online,40.17
+1,23:02:31,Emails sent,1
+1,23:21:48,Emails deleted,1
+2,00:15:30,Emails deleted,1
+2,00:43:29,Emails opened,1
+2,00:56:30,Emails deleted,1
+2,01:48:03,Emails deleted,1
+2,02:47:53,Emails deleted,1
+2,02:52:39,Emails opened,1
+2,03:41:05,Emails opened,1
+2,04:26:28,Emails opened,1
+2,06:00:01,Time online,40.92
+2,07:44:17,Logins,1
+2,08:58:44,Emails deleted,1
+2,09:12:03,Emails sent,1
+2,10:41:06,Emails sent,1
+2,11:19:18,Time online,103.14
+2,12:06:49,Logins,1
+2,12:17:50,Emails deleted,1
+2,13:02:05,Emails deleted,1
+2,13:16:54,Emails opened,1
+2,14:44:33,Emails sent,1
+2,14:47:39,Emails sent,1
+2,15:52:22,Emails deleted,1
+2,17:15:31,Emails opened,1
+2,17:49:37,Emails opened,1
+2,18:46:04,Emails deleted,1
+2,19:26:28,Emails opened,1
+2,20:15:16,Emails sent,1
+2,20:32:10,Emails sent,1
+2,20:58:09,Emails opened,1
+2,21:15:02,Emails opened,1
+2,22:51:51,Emails opened,1
+3,01:06:05,Time online,30.80
+3,01:36:11,Emails sent,1
+3,02:26:18,Emails sent,1
+3,03:00:55,Logins,1
+3,03:37:31,Time online,95.73
+3,04:40:12,Emails opened,1
+3,04:57:12,Emails sent,1
+3,05:45:59,Emails deleted,1
+3,06:01:39,Emails opened,1
+3,07:06:12,Time online,23.05
+3,07:10:07,Emails sent,1
+3,07:55:12,Emails deleted,1
+3,09:00:38,Emails sent,1
+3,10:14:20,Emails deleted,1
+3,11:26:27,Emails sent,1
+3,11:29:58,Emails sent,1
+3,12:56:05,Emails deleted,1
+3,13:02:33,Emails deleted,1
+3,14:08:37,Emails sent,1
+3,14:19:55,Emails deleted,1
+3,14:31:40,Emails opened,1
+3,14:32:15,Emails sent,1
+3,14:59:54,Emails deleted,1
+3,15:02:47,Emails opened,1
+3,15:46:17,Emails opened,1
+3,16:14:41,Emails opened,1
+3,16:27:48,Emails opened,1
+3,16:38:55,Emails deleted,1
+3,16:52:53,Emails opened,1
+3,17:51:09,Emails deleted,1
+3,21:29:40,Emails deleted,1
+3,22:25:52,Emails opened,1
+3,22:29:51,Emails sent,1
+3,22:50:26,Logins,1
+3,23:46:09,Emails sent,1
+4,02:22:23,Emails sent,1
+4,02:41:11,Emails sent,1
+4,03:23:57,Emails opened,1
+4,04:02:54,Emails deleted,1
+4,04:27:03,Emails sent,1
+4,05:35:00,Logins,1
+4,05:37:19,Emails opened,1
+4,05:48:44,Emails deleted,1
+4,06:18:41,Emails opened,1
+4,08:10:01,Logins,1
+4,08:16:01,Emails opened,1
+4,08:16:35,Emails opened,1
+4,08:45:01,Emails sent,1
+4,09:42:54,Emails deleted,1
+4,10:28:05,Emails sent,1
+4,10:54:33,Time online,60.79
+4,11:01:17,Time online,93.16
+4,11:57:16,Emails deleted,1
+4,13:52:01,Emails sent,1
+4,18:42:06,Emails deleted,1
+4,19:15:15,Emails deleted,1
+4,19:31:05,Emails deleted,1
+4,20:55:13,Emails sent,1
+4,22:02:05,Emails opened,1
+5,01:08:53,Logins,1
+5,01:32:33,Emails opened,1
+5,02:00:44,Emails deleted,1
+5,02:26:49,Emails opened,1
+5,03:47:13,Emails sent,1
+5,04:19:18,Emails deleted,1
+5,05:37:53,Emails sent,1
+5,05:42:03,Emails opened,1
+5,06:01:28,Emails opened,1
+5,06:32:23,Emails sent,1
+5,06:44:08,Emails deleted,1
+5,09:22:14,Emails opened,1
+5,09:35:27,Time online,155.39
+5,09:44:30,Emails opened,1
+5,10:01:47,Emails opened,1
+5,10:59:23,Emails deleted,1
+5,12:13:07,Emails sent,1
+5,13:28:40,Emails opened,1
+5,13:59:02,Emails deleted,1
+5,14:13:34,Emails sent,1
+5,15:33:04,Emails deleted,1
+5,16:26:15,Emails sent,1
+5,17:07:38,Emails deleted,1
+5,18:28:03,Emails opened,1
+5,19:09:20,Emails opened,1
+5,20:03:26,Logins,1
+5,21:01:27,Emails opened,1
+5,21:12:06,Emails opened,1
+5,22:31:02,Emails sent,1
+5,23:18:55,Emails sent,1
